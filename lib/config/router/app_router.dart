@@ -2,12 +2,16 @@ import 'package:cinemapedia/presentation/screens/screns.dart';
 import 'package:go_router/go_router.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/home/0',
   routes:[
     GoRoute(
-      path: '/',
+      path: '/home/:page',
       name: Homescreen.name,
-      builder: (context, state) => const Homescreen(),
+      builder: (context, state){
+        final pageIndex = int.parse(state.pathParameters['page'] ?? '0');
+        if (pageIndex > 2 || pageIndex < 0)return const Homescreen(pageIndex: 0);
+        return Homescreen(pageIndex: pageIndex);
+      },
 
       routes: [
         GoRoute(
@@ -20,6 +24,11 @@ final appRouter = GoRouter(
       ),
       ]
       ),
+
+      GoRoute(
+        path: '/',
+        redirect:(context, state) => '/home/0', 
+        )
     
   ]
 );

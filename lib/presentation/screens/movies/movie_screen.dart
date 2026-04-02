@@ -171,18 +171,42 @@ Widget build(BuildContext context, ref) {
     );
   }
 }
+final isFavoriteProvider = FutureProvider.family.autoDispose((ref, int movieId){
+  final localStorageRepository = ref.watch(localStorageRepositoryProvider);
+  return localStorageRepository.isMovieFavorite(movieId);
+});
 
-class _CustomSliverAppvar extends StatelessWidget {
+class _CustomSliverAppvar extends ConsumerWidget {
   final Movie movie;
   const _CustomSliverAppvar({ required this.movie });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+
+    final isFavoriteFuture = ref.watch(isFavoriteProvider(movie.id));
+
     final size = MediaQuery.of(context).size;
     return SliverAppBar(
       backgroundColor: Colors.black,
       expandedHeight: size.height * 0.7,
       foregroundColor: Colors.white,
+      actions: [
+        IconButton(onPressed: () async{
+         // ref.read(localStorageRepositoryProvider).toggleFavotite(movie);
+         await ref.read( favoriteMoviesProvider.notifier ).toggleFavorite(movie);
+          ref.invalidate(isFavoriteProvider(movie.id));
+        }, 
+        icon: isFavoriteFuture.when(
+          loading: () => const Icon(Icons.favorite_border),
+          data: (isFavorite) => isFavorite
+          ? const Icon(Icons.favorite_rounded, color: Colors.red,)
+          : const Icon(Icons.favorite_border), 
+          error: (_,__) => throw UnimplementedError(), 
+          ),
+        //Icon(Icons.favorite_border)
+        //icon: Icon(Icons.favorite_rounded, color: Colors.red,)
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.symmetric(horizontal: 15,vertical: 10),
         // title: Text(movie.title,
@@ -201,21 +225,22 @@ class _CustomSliverAppvar extends StatelessWidget {
                 },
               ),
             ),
-            const SizedBox.expand(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.7, 1.0],
-                    colors:[
-                      Colors.transparent,
-                      Colors.black87
-                    ] 
-                    )
-                )
-              ),
-            ),
+            const _CustomGradient(
+              begin: Alignment.topRight, 
+              end:Alignment.bottomLeft,
+              stops: [0.0, 0.2],
+              colors:[
+                Colors.black87,
+                Colors.transparent,
+                    ] ,),
+            const _CustomGradient(
+              begin: Alignment.topCenter, 
+              end:Alignment.bottomCenter,
+              stops: [0.8,1.0],
+              colors: [
+                Colors.transparent,
+                Colors.black54
+                      ],),
             const SizedBox.expand(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -229,10 +254,39 @@ class _CustomSliverAppvar extends StatelessWidget {
                     )
                 )
               ),
-            )
+            ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _CustomGradient extends StatelessWidget {
+  final AlignmentGeometry begin;
+  final AlignmentGeometry end;
+  final List<double> stops;
+  final List<Color> colors; 
+  const _CustomGradient({
+   this.begin = Alignment.centerLeft,
+   this.end = Alignment.centerRight,
+   required this.stops,
+   required this.colors
+   });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: begin,
+                    end: end,
+                    stops: stops,
+                    colors:colors
+                    )
+                )
+              ),
+            );
   }
 }
